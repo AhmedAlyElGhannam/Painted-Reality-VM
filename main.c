@@ -6,14 +6,19 @@ int main(int argc, char *argv[])
 {
     Program *prog;
     VM *vm;
-    int8 size;
 
-    size = (map_opcode_to_instr_size(mov) + map_opcode_to_instr_size(nop));
-    prog = dumdumprog();
+    vm = virtualmachine();
+    printf("vm = %p (size = %d)\n", vm, sizeof(VM));
+
+    prog = dumdumprog(vm);
     printf("prog = %p\n", prog);
 
-    vm = virtualmachine(prog, size);
-    printf("vm = %p\n", vm);
+    // prints 01 00 05 02 
+    //         ^ mov instruction
+    //           ^ first arg
+    //               ^ second arg
+    //                  ^ nop instruction
+    printhex($1 prog, (map_opcode_to_instr_size(mov) + map_opcode_to_instr_size(nop)), ' ');
 
     return 0;
 }

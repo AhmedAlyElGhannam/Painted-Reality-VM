@@ -47,7 +47,7 @@ struct s_cpu
 };
 typedef struct s_cpu CPU;
 
-typedef int8 Stack[((unsigned short int)(-1))]; // sequence/array or bytes
+typedef int8 Memory[((unsigned short int)(-1))]; // sequence/array or bytes
 
 enum e_opcode
 {
@@ -70,17 +70,19 @@ struct s_instruction
     Opcode o;
     Args a[]; // 0-2 bytes args
 };
-typedef struct s_instruction* Instruction;
+typedef struct s_instruction Instruction;
 
-typedef Instruction Program; // array/sequence of instructions
+typedef int8 Program;
 
 struct s_vm
 {
     CPU c;
-    Stack s;
-    Program *p;
+    Memory m;
+    int16 b; // break line
 };
 typedef struct s_vm VM;
+
+typedef Memory *Stack;
 
 static IM instrmap[] = {
     {mov, 0x03},
@@ -89,8 +91,22 @@ static IM instrmap[] = {
 
 #define IMs (sizeof(instrmap) / sizeof(struct s_instrmap))
 
-Program *dumdumprog(void);
+Program *dumdumprog(VM*);
 int8 map_opcode_to_instr_size(Opcode);
-VM *virtualmachine(Program *prog, int16 progsz);
+VM *virtualmachine(void);
+
+/*                          r w x
+    Section .text         | 1 0 1 | (grows down)
+    #########             |       |
+    #####                 |       |
+    _______________________________
+    _______________________________ break line between sections
+    *******               |       |
+    ********   ^          |       |
+    *********  |          |       |
+    Section .data         | 1 1 0 | (grows up)
+
+
+*/
 
 #endif
