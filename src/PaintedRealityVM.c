@@ -2,7 +2,7 @@
 #include "PaintedRealityVM.h"
 
 VM *
-virtualmachine(Program* prog, int16 progsz)
+virtualmachine(Program *prog, int16 progsz)
 {
     VM *p;
     Program *pp;
@@ -10,7 +10,7 @@ virtualmachine(Program* prog, int16 progsz)
 
     assert((prog) && (progsz));
 
-    size = sizeof(struct s_vm);
+    size = $2 sizeof(struct s_vm);
     p = (VM *)malloc($i size);
     if (!p)
     {
@@ -28,7 +28,7 @@ virtualmachine(Program* prog, int16 progsz)
         goto p_alloc_err;
     }
 
-    memcpy(pp, prog, progsz);
+    mem_cpy(pp, prog, progsz);
 
     // should initialize vm's program with pp
 
@@ -40,4 +40,53 @@ vm_alloc_err:
     p = (VM *)0;
 out:
     return p;
+}
+
+int8 
+map_opcode_to_instr_size(Opcode op)
+{
+    int8 n, ret;
+    IM *p;
+
+    ret = 0;
+    for (n = IMs, p = instrmap; n; n--, p++)
+    {
+        if (p->o == op)
+        {
+            ret = p->s;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+Program *
+dumdumprog(void)
+{
+    int16 size;
+    Instruction i1, i2;
+    static Program prog[2];
+
+    size = map_opcode_to_instr_size(mov);
+    i1 = (Instruction)malloc($i size);
+    if (!i1)
+    {
+        errno = ErrMem;
+        return (Program *)0;
+    }
+    
+    size = map_opcode_to_instr_size(nop);
+    i2 = (Instruction)malloc($i size);
+    if (!i2)
+    {
+        errno = ErrMem;
+        free(i1);
+        return (Program *)0;
+    }
+    
+    prog[0] = i1;
+    prog[1] = i2;
+    
+    return prog;
 }

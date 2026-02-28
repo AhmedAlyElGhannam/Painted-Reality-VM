@@ -9,8 +9,10 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define ErrMem (0x01)
+#define NoArgs { 0x00, 0x00 }
 
 /*
     PaintedReality VM
@@ -45,7 +47,7 @@ struct s_cpu
 };
 typedef struct s_cpu CPU;
 
-typedef int8 Stack[((unsigned int)(-1))]; // sequence/array or bytes
+typedef int8 Stack[((unsigned short int)(-1))]; // sequence/array or bytes
 
 enum e_opcode
 {
@@ -57,7 +59,7 @@ typedef enum e_opcode Opcode;
 struct s_instrmap
 {
     Opcode o;
-    int8 size;
+    int8 s; // size
 };
 typedef struct s_instrmap IM;
 
@@ -68,7 +70,7 @@ struct s_instruction
     Opcode o;
     Args a[]; // 0-2 bytes args
 };
-typedef struct s_instruction Instruction;
+typedef struct s_instruction* Instruction;
 
 typedef Instruction Program; // array/sequence of instructions
 
@@ -85,6 +87,10 @@ static IM instrmap[] = {
     {nop, 0x01}
 };
 
-VM *virtualmachine(Program* prog, int16 progsz);
+#define IMs (sizeof(instrmap) / sizeof(struct s_instrmap))
+
+Program *dumdumprog(void);
+int8 map_opcode_to_instr_size(Opcode);
+VM *virtualmachine(Program *prog, int16 progsz);
 
 #endif
