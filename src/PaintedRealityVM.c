@@ -94,7 +94,7 @@ dumdumprog(VM *vm)
     prog++;
     if (argsz1)
     {
-        mem_cpy($1 prog, $1 (&a1), argsz1);
+        mem_cpy($1 prog, $1(&a1), argsz1);
         prog += argsz1;
     }
 
@@ -104,7 +104,7 @@ dumdumprog(VM *vm)
 
     i3->o = hlt;
     mem_cpy($1 prog, $1 i3, 1);
-    
+
     free(i1);
     free(i2);
     free(i3);
@@ -122,12 +122,9 @@ dumdumprog(VM *vm)
     return ((Program *)&(vm->m));
 }
 
-void error(VM* vm, Errorcode e)
+void error(VM *vm, Errorcode e)
 {
     int8 stat;
-
-    if (vm)
-        free(vm);
 
     stat = -1;
 
@@ -140,19 +137,22 @@ void error(VM* vm, Errorcode e)
         case SysHlt:
             fprintf(stderr, "%s\n", "System Halted.");
             stat = 0;
+            printf("ax = %.04hx", $i vm $ax);
         break;
 
-        default:
+    default:
         break;
     }
+
+    if (vm)
+        free(vm);
 
     exit($i stat);
 }
 
-void __mov(VM* vm, Opcode opcode, Args a1, Args a2)
+void __mov(VM *vm, Opcode opcode, Args a1, Args a2)
 {
     vm $ax = (Reg)a1;
-
     return;
 }
 
@@ -169,14 +169,14 @@ void exec_intr(VM *vm, Instruction *i)
 
     switch (size)
     {
-        case 0:
-        break;
-
         case 1:
-            a1 = i->a[0];
         break;
 
         case 2:
+            a1 = i->a[0];
+        break;
+
+        case 3:
             a1 = i->a[0];
             a2 = i->a[1];
         break;
@@ -208,31 +208,38 @@ void exec_intr(VM *vm, Instruction *i)
     return;
 }
 
-void execute(VM* vm)
+void execute(VM *vm)
 {
+    int32 brkaddr;
     Program *pp;
-    Instruction *ip;
-    int16 size;
+    Instruction ip;
+    int16 size = 0;
 
     // check if vm exists + vm mem has an instruction at first byte
-    assert(vm && *(vm->m));
-    pp = vm->m;
+    assert(vm && (*(vm->m)));
+    brkaddr = (((int32)(vm->m)) + (vm->b));
+    pp = (Program *)(&(vm->m));
 
     /* mov ax 0x05; nop; hlt; */
     // 0x01 0x00 0x05; 0x02; 0x03;
 
-    while (((*pp) != ((Opcode)hlt)) && (pp <= vm->b))
+    do
     {
-        ip = (Instruction *)pp;
-        size = map_opcode_to_instr_size(ip->o);
-
-        exec_intr(vm, ip); // execute single instruction
-
         vm $pc += size;
         pp += size;
-    }
-    if (pp > (vm->b))
-    {
-        segfault(vm);
-    }
+        ip.o = (*pp);
+
+        // if (vm $pc > vm->b)
+        if (((int32)pp) > (brkaddr))
+        {
+            segfault(vm);
+        }
+
+        size = map_opcode_to_instr_size((Opcode)(*pp));
+        ip.a[0] = *(pp + 1);
+        ip.a[1] = *(pp + 3);
+        exec_intr(vm, &ip); // execute single instruction        
+    } while ((*pp) != ((Opcode)hlt));
+
+    return;
 }

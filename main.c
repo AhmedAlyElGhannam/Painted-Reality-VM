@@ -18,11 +18,9 @@ int main(int argc, char *argv[])
     //           ^ first arg
     //               ^ second arg
     //                  ^ nop instruction
-    printhex($1 prog, (map_opcode_to_instr_size(mov) + map_opcode_to_instr_size(nop)), ' ');
+    printhex($1 prog, (map_opcode_to_instr_size(mov) + map_opcode_to_instr_size(nop) + map_opcode_to_instr_size(hlt)), ' ');
 
     execute(vm);
-
-    printf("ax = %.04hx\n", $i vm $ax);
     
     return 0;
 }
