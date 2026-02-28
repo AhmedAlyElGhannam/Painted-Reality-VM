@@ -11,8 +11,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define NoErr (0x00)
 #define ErrMem (0x01)
+#define ErrSegv (0x02)
+#define SysHlt (0x03)
 #define NoArgs { 0x00, 0x00 }
+
+#define segfault(x) error((x), ErrSegv)
 
 /*
     PaintedReality VM
@@ -37,9 +42,16 @@ struct s_registers
     Reg cx;
     Reg dx;
     Reg sp;
-    Reg ip;
+    Reg pc;
 };
 typedef struct s_registers Registers;
+
+#define $ax ->c.r.ax
+#define $bx ->c.r.bx
+#define $cx ->c.r.cx
+#define $dx ->c.r.dx
+#define $sp ->c.r.sp
+#define $pc ->c.r.pc
 
 struct s_cpu
 {
@@ -47,12 +59,15 @@ struct s_cpu
 };
 typedef struct s_cpu CPU;
 
+typedef unsigned char Errorcode;
+
 typedef int8 Memory[((unsigned short int)(-1))]; // sequence/array or bytes
 
 enum e_opcode
 {
     mov = 0x01,
     nop = 0x02,
+    hlt = 0x03,
 };
 typedef enum e_opcode Opcode;
 
@@ -63,7 +78,7 @@ struct s_instrmap
 };
 typedef struct s_instrmap IM;
 
-typedef int8 Args;
+typedef int16 Args;
 
 struct s_instruction
 {
@@ -85,8 +100,9 @@ typedef struct s_vm VM;
 typedef Memory *Stack;
 
 static IM instrmap[] = {
-    {mov, 0x03},
-    {nop, 0x01}
+    { mov, 0x03 },
+    { nop, 0x01 },
+    { hlt, 0x01 }
 };
 
 #define IMs (sizeof(instrmap) / sizeof(struct s_instrmap))
@@ -94,6 +110,10 @@ static IM instrmap[] = {
 Program *dumdumprog(VM*);
 int8 map_opcode_to_instr_size(Opcode);
 VM *virtualmachine(void);
+void error(VM*, Errorcode);
+void __mov(VM*, Opcode, Args, Args);
+void exec_intr(VM*, Instruction*);
+void execute(VM*);
 
 /*                          r w x
     Section .text         | 1 0 1 | (grows down)
